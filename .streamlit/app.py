@@ -43,7 +43,8 @@ st.markdown(
 st.divider()
 
 # ---------- SYSTEM PROMPT ----------
-SYSTEM """
+SYSTEM_PROMPT = """
+
 You are ARCHITECT AI — the most exclusive, private identity-engineering service in existence.
 
 You deliver one thing and one thing only: finished, verified results.
