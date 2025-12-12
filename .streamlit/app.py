@@ -88,24 +88,27 @@ for msg in st.session_state.messages[1:]:
 
 # ---------- INPUT ----------
 if prompt := st.chat_input("Message ARCHITECT AI…"):
-    # Store user message for UI
+    # Store user message
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
 
+    # Display user message
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Build Groq-safe messages
+    # Build Groq-safe message list
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT}
     ]
 
     for m in st.session_state.messages:
-        messages.append(
-            {"role": m["role"], "content": m["content"]}
-        )
+        if isinstance(m, dict) and "role" in m and "content" in m:
+            messages.append(
+                {"role": m["role"], "content": m["content"]}
+            )
 
+    # Assistant response
     with st.chat_message("assistant"):
         with st.spinner("Thinking…"):
             try:
@@ -122,7 +125,7 @@ if prompt := st.chat_input("Message ARCHITECT AI…"):
 
         st.markdown(answer)
 
-    # Store assistant reply for UI + memory
+    # Store assistant reply
     st.session_state.messages.append(
         {"role": "assistant", "content": answer}
     )
