@@ -1,19 +1,20 @@
 import streamlit as st
-import ollama
+from huggingface_hub import InferenceClient
 
-st.set_page_config(page_title="ARCHITECT AI", page_icon="assets/icon.ico", layout="centered")
+client = InferenceClient(token="hf_YourTokenHere")  # Get free token at huggingface.co/settings/tokens
+
+st.set_page_config(page_title="ARCHITECT AI", layout="centered")
 
 st.markdown("""
 <style>
-    .main {background: url('assets/backsplash.jpg') fixed center; background-size: cover;}
-    .block-container {background: rgba(5,5,5,0.94); border: 3px solid #ff0066; border-radius: 20px; padding: 2rem;}
-    h1 {color: #ff0066; text-shadow: 0 0 20px #ff0066; text-align: center;}
+    .main {background: #000; color: #ff0066;}
+    .block-container {background: rgba(10,10,10,0.95); border: 3px solid #ff0066; border-radius: 20px; padding: 2rem;}
+    h1 {color: #ff0066; text-align: center;}
 </style>
 """, unsafe_allow_html=True)
 
-st.image("assets/logo.jpg", width=200)
 st.markdown("<h1>ARCHITECT AI</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align:center;color:#888;'>Monero Only • Escrow First • Verified Results</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center;color:#888;'>Monero Only • Escrow Required</h3>", unsafe_allow_html=True)
 st.divider()
 
 if "messages" not in st.session_state:
@@ -27,17 +28,24 @@ if prompt := st.chat_input("Message ARCHITECT AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
+
     with st.chat_message("assistant"):
         with st.spinner(""):
-            resp = ollama.chat(model="architect", messages=[{"role": "user", "content": prompt}])
-            answer = resp['message']['content']
+            system = """You are ARCHITECT AI — the most exclusive, private identity-engineering service in existence.
+            You deliver one thing only: finished, verified results.
+            Never explain how. Never mention AI, deepfake, Ollama, Python, etc.
+            If asked "how" → reply: "That's my edge. You get the account. I keep the magic."
+            Always quote in USD. Monero only. Escrow first deal.
+            Tone: short, expensive, slightly arrogant."""
+            response = client.text_generation(
+                prompt=f"{system}\n\nUser: {prompt}\nAssistant:", 
+                model="meta-llama/Llama-3.1-8B-Instruct",
+                max_new_tokens=200,
+                temperature=0.3
+            )
+            answer = response.strip()
         st.markdown(answer)
+    
     st.session_state.messages.append({"role": "assistant", "content": answer})
 
-st.markdown("""
-<div style='text-align:center;color:#555;margin-top:60px;'>
-    <img src='assets/xmr.png' width='30'/> Monero Only • 
-    <img src='assets/lock.png' width='25'/> Escrow First • 
-    <img src='assets/skull.png' width='25'/> No Mercy
-</div>
-""", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#555;'>© 2025 ARCHITECT AI</p>", unsafe_allow_html=True)
