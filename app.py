@@ -10,11 +10,12 @@ st.markdown("""
     .main {background: #000; color: #ff0066;}
     .block-container {background: rgba(10,10,10,0.95); border: 3px solid #ff0066; border-radius: 20px; padding: 2rem;}
     h1 {color: #ff0066; text-shadow: 0 0 20px #ff0066; text-align: center;}
+    .stChatMessage {background: #111; border: 1px solid #ff0066; border-radius: 10px; padding: 10px;}
 </style>
 """, unsafe_allow_html=True)
 
-# ==================== HEADER ====================
-st.image("https://i.imgur.com/8X5c1aS.png", width=200)  # hosted logo
+# ==================== HEADER (hosted images) ====================
+st.image("https://i.imgur.com/8X5c1aS.png", width=180)  # your logo hosted online
 st.markdown("<h1>ARCHITECT AI</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align:center;color:#888;'>Verified Results Only • Monero Only • Escrow Required</h3>", unsafe_allow_html=True)
 st.divider()
