@@ -27,16 +27,14 @@ if prompt := st.chat_input("Message ARCHITECT AI..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
-
     with st.chat_message("assistant"):
         with st.spinner(""):
             resp = ollama.chat(model="architect", messages=[{"role": "user", "content": prompt}])
             answer = resp['message']['content']
         st.markdown(answer)
-    
     st.session_state.messages.append({"role": "assistant", "content": answer})
 
-st.markdown(f"""
+st.markdown("""
 <div style='text-align:center;color:#555;margin-top:60px;'>
     <img src='assets/xmr.png' width='30'/> Monero Only • 
     <img src='assets/lock.png' width='25'/> Escrow First • 
