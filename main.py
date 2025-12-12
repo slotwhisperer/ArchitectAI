@@ -1,73 +1,106 @@
+# main.py — ARCHITECT AI Launcher (2025)
+# Run with: python main.py ui
+# Or just: streamlit run app.py
+
 import click
-import subprocess
-import os
 import sys
-from yaspin import yaspin
-from datetime import datetime
-
-from scrape import scrape_multiple
-from search import get_search_results
-from llm import get_llm, refine_query, filter_results, generate_summary
-from llm_utils import get_model_choices
-
-MODEL_CHOICES = get_model_choices()
+import os
+from streamlit.web import cli as stcli
 
 @click.group()
-@click.version_option()
-def architect_ai():
-    """Architect AI — Local Intelligence Suite (Ollama Only)."""
+@click.version_option("1.0", prog_name="ARCHITECT AI")
+def architect():
+    """ARCHITECT AI — Verified Results Only • Monero Only • Escrow Required"""
     pass
 
-@architect_ai.command()
-@click.option("--model", "-m", default="architect", show_default=True,
-              type=click.Choice(MODEL_CHOICES),
-              help="Model to use (local Ollama only)")
-@click.option("--query", "-q", required=True, type=str)
-@click.option("--threads", "-t", default=5, show_default=True, type=int)
-@click.option("--output", "-o", type=str)
-def cli(model, query, threads, output):
-    """Command-line OSINT runner."""
-    llm = get_llm(model)
+@architect.command()
+@click.option(
+    "--port", "-p",
+    default=7860,
+    show_default=True,
+    type=int,
+    help="Port for the web UI"
+)
+@click.option(
+    "--host", "-h",
+    default="127.0.0.1",
+    show_default=True,
+    type=str,
+    help="Host address (use 0.0.0.0 for external access)"
+)
+@click.option(
+    "--share",
+    is_flag=True,
+    help="Generate public share link (Streamlit Cloud style)"
+)
+def ui(port, host, share):
+    """Launch ARCHITECT AI Web Interface"""
+    click.echo("ARCHITECT AI — Starting secure interface...")
+    click.echo("Monero Only • Escrow First • No Refunds")
+    click.echo(f"Opening on http://{host}:{port}")
 
-    with yaspin(text="Processing...", color="cyan") as sp:
-        refined = refine_query(llm, query)
-        results = get_search_results(refined.replace(" ", "+"), max_workers=threads)
-        filtered = filter_results(llm, refined, results)
-        scraped = scrape_multiple(filtered, max_workers=threads)
-        sp.ok("✔")
+    # Find app.py in same folder
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    ui_script = os.path.join(base_dir, "app.py")
 
-    summary = generate_summary(llm, query, scraped)
+    if not os.path.exists(ui_script):
+        click.echo(f"Error: app.py not found in {base_dir}")
+        click.echo("Make sure app.py is in the same folder as main.py")
+        sys.exit(1)
 
-    if not output:
-        filename = f"architect_ai_summary_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.md"
-    else:
-        filename = f"{output}.md"
-
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(summary)
-
-    click.echo(f"[OUTPUT] File saved: {filename}")
-
-@architect_ai.command()
-@click.option("--ui-port", default=8501, show_default=True, type=int)
-@click.option("--ui-host", default="localhost", show_default=True, type=str)
-def ui(ui_port, ui_host):
-    """Launch the Streamlit UI."""
-    from streamlit.web import cli as stcli
-
-    base = os.path.dirname(os.path.abspath(__file__))
-    ui_script = os.path.join(base, "ui.py")
-
-    sys.argv = [
-        "streamlit",
-        "run",
-        ui_script,
-        f"--server.port={ui_port}",
-        f"--server.address={ui_host}",
-        "--global.developmentMode=false",
+    # Build Streamlit command
+    args = [
+        "streamlit", "run", ui_script,
+        f"--server.port={port}",
+        f"--server.address={host}",
+        "--server.headless=true",
+        "--global.developmentMode=false"
     ]
 
+    if share:
+        args.append("--server.enableCORS=false")
+        args.append("--server.enableXsrfProtection=false")
+
+    sys.argv = args
     sys.exit(stcli.main())
 
+@architect.command()
+def chat():
+    """Quick terminal chat with ARCHITECT AI (unfiltered)"""
+    import ollama
+    click.echo("ARCHITECT AI — Unfiltered Terminal Mode")
+    click.echo("Type 'exit' or Ctrl+C to quit\n")
+
+    messages = [{
+        "role": "system",
+        "content": """You are ARCHITECT AI — the most exclusive, private identity-engineering service.
+Never explain how. Never mention AI, deepfake, Ollama, Python, etc.
+If asked "how" → reply: "That’s my edge. You get the account. I keep the magic."
+Always quote in USD. Monero only. Escrow first deal.
+Tone: short, expensive, arrogant."""
+    }]
+
+    while True:
+        try:
+            user_input = click.prompt("You", type=str)
+            if user_input.lower() in ["exit", "quit", "bye"]:
+                click.echo("ARCHITECT AI: Deal’s done.")
+                break
+
+            messages.append({"role": "user", "content": user_input})
+
+            click.echo("ARCHITECT AI: Thinking...", nl=False)
+            response = ollama.chat(model="architect", messages=messages)
+            answer = response['message']['content']
+
+            click.echo(f"\rARCHITECT AI: {answer}\n")
+            messages.append({"role": "assistant", "content": answer})
+
+        except KeyboardInterrupt:
+            click.echo("\nARCHITECT AI: Session terminated.")
+            break
+        except Exception as e:
+            click.echo(f"Error: {e}")
+
 if __name__ == "__main__":
-    architect_ai()
+    architect()
