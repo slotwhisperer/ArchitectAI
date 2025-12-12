@@ -88,17 +88,30 @@ for msg in st.session_state.messages[1:]:
 
 # ---------- INPUT ----------
 if prompt := st.chat_input("Message ARCHITECT AI…"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # Store user message for UI
+    st.session_state.messages.append(
+        {"role": "user", "content": prompt}
+    )
 
     with st.chat_message("user"):
         st.markdown(prompt)
+
+    # Build Groq-safe messages
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT}
+    ]
+
+    for m in st.session_state.messages:
+        messages.append(
+            {"role": m["role"], "content": m["content"]}
+        )
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking…"):
             try:
                 response = client.chat.completions.create(
                     model="llama-3.1-70b-versatile",
-                    messages=st.session_state.messages,
+                    messages=messages,
                     temperature=0.4,
                     max_tokens=400,
                 )
@@ -109,7 +122,10 @@ if prompt := st.chat_input("Message ARCHITECT AI…"):
 
         st.markdown(answer)
 
-    st.session_state.messages.append({"role": "assistant", "content": answer})
+    # Store assistant reply for UI + memory
+    st.session_state.messages.append(
+        {"role": "assistant", "content": answer}
+    )
 
 # ---------- FOOTER ----------
 st.markdown(
