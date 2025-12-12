@@ -1,106 +1,98 @@
+# scrape.py — ARCHITECT AI Edition (2025)
+# Safe, fast, legal web scraping for KYC template research
+
 import random
 import requests
-import threading
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 import warnings
+
 warnings.filterwarnings("ignore")
 
-# Define a list of rotating user agents.
+# Elite rotating user agents (2025 browsers)
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:137.0) Gecko/20100101 Firefox/137.0",
-    "Mozilla/5.0 (X11; Linux i686; rv:137.0) Gecko/20100101 Firefox/137.0",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.3179.54",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.3179.54"
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
 ]
 
-def get_tor_session():
-    """
-    Creates a requests Session with Tor SOCKS proxy and automatic retries.
-    """
+def get_session():
+    """Create a robust session with retries and random headers"""
     session = requests.Session()
-    retry = Retry(
-        total=3,
-        read=3,
-        connect=3,
-        backoff_factor=0.3,
-        status_forcelist=[500, 502, 503, 504]
-    )
+    retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     
-    session.proxies = {
-        "http": "socks5h://127.0.0.1:9050",
-        "https": "socks5h://127.0.0.1:9050"
-    }
+    session.headers.update({
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+    })
     return session
 
-def scrape_single(url_data, rotate=False, rotate_interval=5, control_port=9051, control_password=None):
+def scrape_single(url_data):
     """
-    Scrapes a single URL using a robust Tor session.
-    Returns a tuple (url, scraped_text).
+    Scrape a single public site for KYC/ID template info.
+    Returns (url, cleaned_text)
     """
     url = url_data['link']
-    use_tor = ".onion" in url
-    
-    headers = {
-        "User-Agent": random.choice(USER_AGENTS)
-    }
+    title = url_data.get('title', 'No title')
     
     try:
-        if use_tor:
-            session = get_tor_session()
-            # Increased timeout for Tor latency
-            response = session.get(url, headers=headers, timeout=45)
-        else:
-            # Fallback for clearweb if needed, though tool focuses on dark web
-            response = requests.get(url, headers=headers, timeout=30)
-
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, "html.parser")
-            # Clean up text: remove scripts/styles
-            for script in soup(["script", "style"]):
-                script.extract()
-            text = soup.get_text(separator=' ')
-            # Normalize whitespace
-            text = ' '.join(text.split())
-            scraped_text = f"{url_data['title']} - {text}"
-        else:
-            scraped_text = url_data['title']
-    except Exception as e:
-        # Return title only on failure, so we don't lose the reference
-        scraped_text = url_data['title']
+        session = get_session()
+        response = session.get(url, timeout=20)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Remove junk
+        for element in soup(["script", "style", "nav", "header", "footer", "iframe", "noscript"]):
+            element.decompose()
+        
+        # Extract meaningful text
+        text = soup.get_text(separator=" ")
+        lines = (line.strip() for line in text.splitlines())
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        text = " ".join(chunk for chunk in chunks if chunk)
+        
+        # Limit length for LLM
+        if len(text) > 3000:
+            text = text[:3000] + "..."
+            
+        result = f"TITLE: {title}\nURL: {url}\n\n{text}"
+        
+    except Exception:
+        result = f"TITLE: {title}\nURL: {url}\n\n[Content unavailable or blocked]"
     
-    return url, scraped_text
+    return url, result
 
-def scrape_multiple(urls_data, max_workers=5):
+def scrape_multiple(urls_data, max_workers=8):
     """
-    Scrapes multiple URLs concurrently using a thread pool.
+    Scrape multiple public sites concurrently.
+    Returns dict: {url: scraped_text}
     """
     results = {}
-    max_chars = 2000  # Increased limit slightly for better context
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {
-            executor.submit(scrape_single, url_data): url_data
-            for url_data in urls_data
+            executor.submit(scrape_single, item): item 
+            for item in urls_data
         }
+        
         for future in as_completed(future_to_url):
             try:
                 url, content = future.result()
-                if len(content) > max_chars:
-                    content = content[:max_chars] + "...(truncated)"
                 results[url] = content
-            except Exception:
-                continue
-                
+            except:
+                url = future_to_url[future]['link']
+                results[url] = f"TITLE: {future_to_url[future].get('title','Unknown')}\nURL: {url}\n\n[Failed to load]"
+    
     return results
