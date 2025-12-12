@@ -79,21 +79,23 @@ Begin.
 
 # ---------- SESSION STATE ----------
 if "messages" not in st.session_state:
-    st.session_state.messages = [SYSTEM_PROMPT]
+    st.session_state.messages = []
+
 
 # ---------- CHAT HISTORY ----------
-for msg in st.session_state.messages[1:]:
+for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+
 # ---------- INPUT ----------
 if prompt := st.chat_input("Message ARCHITECT AI…"):
+
     # Store user message
     st.session_state.messages.append(
         {"role": "user", "content": prompt}
     )
 
-    # Display user message
     with st.chat_message("user"):
         st.markdown(prompt)
 
@@ -103,22 +105,22 @@ if prompt := st.chat_input("Message ARCHITECT AI…"):
     ]
 
     for m in st.session_state.messages:
-        if isinstance(m, dict) and "role" in m and "content" in m:
-            messages.append(
-                {"role": m["role"], "content": m["content"]}
-            )
+        messages.append(
+            {"role": m["role"], "content": m["content"]}
+        )
 
     # Assistant response
     with st.chat_message("assistant"):
         with st.spinner("Thinking…"):
             try:
                 response = client.chat.completions.create(
-                    model="llama-3.1-70b-versatile",
+                    model="llama-3.1-8b-instant",  # ✅ ACTIVE MODEL
                     messages=messages,
                     temperature=0.4,
                     max_tokens=400,
                 )
                 answer = response.choices[0].message.content
+
             except Exception as e:
                 st.error(f"Groq error: {e}")
                 st.stop()
@@ -129,6 +131,7 @@ if prompt := st.chat_input("Message ARCHITECT AI…"):
     st.session_state.messages.append(
         {"role": "assistant", "content": answer}
     )
+
 
 # ---------- FOOTER ----------
 st.markdown(
