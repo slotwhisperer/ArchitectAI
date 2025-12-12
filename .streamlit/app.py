@@ -43,10 +43,6 @@ st.markdown(
 st.divider()
 
 # ---------- SYSTEM PROMPT ----------
-PARAMETER num_ctx 2048
-PARAMETER temperature 0.3
-PARAMETER top_p 0.9
-
 SYSTEM """
 You are ARCHITECT AI — the most exclusive, private identity-engineering service in existence.
 
