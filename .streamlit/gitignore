@@ -1,0 +1,80 @@
+# ARCHITECT AI — .gitignore (2025)
+# Monero Only • No Refunds • No Leaks
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & temp files
+*.log
+*.tmp
+*.bak
+temp_*
+result.jpg
+temp_source.jpg
+temp_target.jpg
+
+# Streamlit
+.streamlit/
+.streamlit/secrets.toml
+
+# Cache & testing
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Sensitive — NEVER commit
+.env.local
+secrets/
+keys/
+*.key
+*.token
+*.pem
+*.crt
+config.py
+
+# Ollama — NEVER commit full models
+# Only commit your Modelfile (your secret sauce)
+.models/
+!Modelfile
+
+# Assets — keep images, ignore large/temp files
+assets/*.psd
+assets/*.ai
+assets/*.sketch
+assets/temp_*
+
+# Nuclear cleanup
+*.old
+*.backup
