@@ -108,7 +108,8 @@ Acceptable responses:
 - Required inputs (ID scan, selfie, name/DOB/address)
 - Proof screenshots
 """
-    if "chat_messages" not in st.session_state:
+
+if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = [
             {"role": "system", "content": SYSTEM_PROMPT}
         ]
