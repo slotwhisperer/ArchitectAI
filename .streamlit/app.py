@@ -107,45 +107,64 @@ Acceptable responses:
 - your responses are based of research.
 - Required inputs (ID scan, selfie, name/DOB/address)
 - Proof screenshots
+Begin
 """
 
+# ---------- SESSION STATE ----------
 if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [
-            {"role": "system", "content": SYSTEM_PROMPT}
-        ]
+    st.session_state.chat_messages = []
 
-    # Render chat history
-    for msg in st.session_state.chat_messages[1:]:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
 
-    if prompt := st.chat_input("Message ARCHITECT AI…"):
+# ---------- CHAT HISTORY ----------
+for msg in st.session_state.chat_messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-        # Store user message
-        st.session_state.chat_messages.append(
-            {"role": "user", "content": prompt}
+
+# ---------- CHAT INPUT ----------
+prompt = st.chat_input("Message ARCHITECT AI…")
+
+if prompt:
+    # Store user message
+    st.session_state.chat_messages.append(
+        {"role": "user", "content": prompt}
+    )
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Build Groq-safe messages
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT}
+    ]
+
+    for m in st.session_state.chat_messages:
+        messages.append(
+            {"role": m["role"], "content": m["content"]}
         )
 
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking…"):
+    # Assistant response
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking…"):
+            try:
                 response = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
-                    messages=st.session_state.chat_messages,
-                    temperature=0.5,
+                    messages=messages,
+                    temperature=0.4,
                     max_tokens=400,
                 )
-
                 answer = response.choices[0].message.content
+            except Exception as e:
+                st.error(f"Groq error: {e}")
+                st.stop()
 
-            st.markdown(answer)
+        st.markdown(answer)
 
-        # Store assistant reply
-        st.session_state.chat_messages.append(
-            {"role": "assistant", "content": answer}
-        )
+    # Store assistant reply
+    st.session_state.chat_messages.append(
+        {"role": "assistant", "content": answer}
+    )
+
 
 # ---------------- OSINT MODE ----------------
 if mode == "🕵️ OSINT Investigation":
