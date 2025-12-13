@@ -107,8 +107,6 @@ Acceptable responses:
 - your responses are based of research.
 - Required inputs (ID scan, selfie, name/DOB/address)
 - Proof screenshots
-
-Begin
 """
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = [
