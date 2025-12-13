@@ -72,65 +72,6 @@ mode = st.sidebar.radio(
     ["🕵️ OSINT Investigation", "💬 Private Chat"],
 )
 
-# ============================================================
-# 🕵️ OSINT MODE
-# ============================================================
-if mode == "🕵️ OSINT Investigation":
-
-    st.subheader("🕵️ OSINT Investigation")
-
-    model_options = get_model_choices()
-    model = st.sidebar.selectbox("LLM Model", model_options)
-    threads = st.sidebar.slider("Scraping Threads", 1, 12, 4)
-
-    with st.form("search_form"):
-        query = st.text_input(
-            "Investigation Query",
-            placeholder="e.g. darknet marketplace intelligence",
-        )
-        run = st.form_submit_button("Run Investigation")
-
-    status = st.empty()
-    c1, c2, c3 = st.columns(3)
-    summary_holder = st.empty()
-
-    if run and query:
-
-        with status.spinner("Loading LLM…"):
-            llm = get_llm(model)
-
-        with status.spinner("Refining query…"):
-            refined = refine_query(llm, query)
-        c1.container(border=True).markdown(f"**Refined Query**\n\n{refined}")
-
-        with status.spinner("Searching sources…"):
-            results = get_search_results(refined.replace(" ", "+"), max_workers=threads)
-        c2.container(border=True).markdown(f"**Results Found**\n\n{len(results)}")
-
-        with status.spinner("Filtering results…"):
-            filtered = filter_results(llm, refined, results)
-        c3.container(border=True).markdown(f"**Filtered Results**\n\n{len(filtered)}")
-
-        with status.spinner("Scraping content…"):
-            scraped = scrape_multiple(filtered, max_workers=threads)
-
-        with status.spinner("Generating intelligence summary…"):
-            summary = generate_summary(llm, query, scraped)
-
-        with summary_holder.container():
-            st.subheader("📄 Intelligence Summary")
-            st.markdown(summary)
-
-        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        b64 = base64.b64encode(summary.encode()).decode()
-        st.markdown(
-            f'<a download="architect_summary_{now}.md" '
-            f'href="data:text/markdown;base64,{b64}">📥 Download Report</a>',
-            unsafe_allow_html=True,
-        )
-
-        status.success("✔ Investigation complete")
-
 
 # ---------------- CHAT MODE ----------------
 if mode == "💬 Private Chat":
