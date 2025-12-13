@@ -104,33 +104,55 @@ Acceptable responses:
 Begin.
 """
 
+# ---------------- CHAT MODE ----------------
 if mode == "💬 Private Chat":
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    from groq import Groq
 
-    for msg in st.session_state.messages:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+
+    SYSTEM_PROMPT = (
+        "You are ARCHITECT AI — a private intelligence and analysis assistant.\n"
+        "Respond directly to the user's input.\n"
+        "Do NOT repeat canned pricing unless explicitly asked.\n"
+        "Be concise, analytical, and adaptive."
+    )
+
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = [
+            {"role": "system", "content": SYSTEM_PROMPT}
+        ]
+
+    # Render chat history
+    for msg in st.session_state.chat_messages[1:]:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
     if prompt := st.chat_input("Message ARCHITECT AI…"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # Store user message
+        st.session_state.chat_messages.append(
+            {"role": "user", "content": prompt}
+        )
 
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        messages.extend(st.session_state.messages)
-
         with st.chat_message("assistant"):
             with st.spinner("Thinking…"):
-                llm = get_llm("llama3.1")
-                response = llm.invoke(messages)
-                answer = response.content
+                response = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=st.session_state.chat_messages,
+                    temperature=0.5,
+                    max_tokens=400,
+                )
+
+                answer = response.choices[0].message.content
 
             st.markdown(answer)
 
-        st.session_state.messages.append(
+        # Store assistant reply
+        st.session_state.chat_messages.append(
             {"role": "assistant", "content": answer}
         )
 
