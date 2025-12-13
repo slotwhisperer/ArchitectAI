@@ -1,3 +1,18 @@
+import os
+import streamlit as st
+
+st.write("### 📁 Project directory tree")
+
+for root, dirs, files in os.walk("."):
+    level = root.replace(".", "").count(os.sep)
+    indent = " " * 4 * level
+    st.write(f"{indent}{os.path.basename(root)}/")
+    subindent = " " * 4 * (level + 1)
+    for f in files:
+        st.write(f"{subindent}{f}")
+
+st.stop()
+
 # app.py — ARCHITECT AI (Streamlit Cloud Safe)
 
 import os
