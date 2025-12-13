@@ -104,7 +104,6 @@ Acceptable responses:
 Begin.
 """
 
-# ---------------- CHAT MODE ----------------
 if mode == "💬 Private Chat":
 
     from groq import Groq
