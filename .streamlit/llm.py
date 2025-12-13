@@ -1,118 +1,62 @@
-# llm.py — ARCHITECT AI (2025)
-# Monero Only • No Refunds • No Leaks
+# llm.py — ARCHITECT AI (Cloud-safe, no chains)
 
-import ollama
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from typing import List, Dict, Any
-import logging
-import re
-
-# Suppress warnings
-logging.getLogger("langchain").setLevel(logging.ERROR)
-
-# Only use your custom ARCHITECT model
-MODEL_NAME = "architect"
-
-def get_llm(model_choice: str = MODEL_NAME):
+def get_llm(model_name: str):
     """
-    Returns your ARCHITECT AI model (local Ollama)
-    No OpenAI, no Groq, no keys — pure elite control.
+    Returns a callable LLM wrapper that exposes .invoke(prompt)
+    Compatible with Groq-style chat models.
     """
-    class ArchitectLLM:
-        def __init__(self):
-            pass
-        
-        def invoke(self, input):
-            if isinstance(input, list):
-                messages = input
-            else:
-                messages = [{"role": "user", "content": str(input)}]
-            
-            try:
-                response = ollama.chat(model=MODEL_NAME, messages=messages)
-                return type('obj', (), {'content': response['message']['content']})()
-            except:
-                return type('obj', (), {'content': "$5,500 USD • 5–10 days • Full KYC • Monero escrow only."})()
+    from groq import Groq
+    import streamlit as st
 
-    return ArchitectLLM()
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
+    class GroqLLM:
+        def invoke(self, prompt: str):
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a professional OSINT analyst."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+                max_tokens=800,
+            )
+            return response.choices[0].message.content
 
-def refine_query(llm, user_input: str) -> str:
-    """Convert client request into perfect KYC search query"""
-    system_prompt = """
-    You are ARCHITECT AI.
-    Convert the client's request into the shortest, most effective search query for finding KYC templates and services.
-    Output ONLY the refined query. No explanation. No quotes.
-    """
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("user", "{input}")
-    ])
-    chain = prompt | llm | StrOutputParser()
-    return chain.invoke({"input": user_input})
+    return GroqLLM()
 
 
-def filter_results(llm, query: str, results: List[Dict]) -> List[Dict]:
-    """Select only the top 10 most relevant sources"""
-    if not results:
-        return []
+# ---------------- OSINT HELPERS ----------------
 
-    system_prompt = f"""
-    You are ARCHITECT AI.
-    From the list below, select ONLY the TOP 10 most relevant sources for this KYC request:
-    "{query}"
+def refine_query(llm, query: str) -> str:
+    prompt = f"""
+Refine the following OSINT investigation query.
+Make it precise, focused, and actionable.
 
-    Rules:
-    - Output ONLY the numbers (e.g. 1,3,7,12) — nothing else
-    - Maximum 10 numbers
-    - Be ruthless — only the best
-    """
+Query:
+{query}
 
-    result_lines = "\n".join([
-        f"{i+1}. {r.get('title','')} — {r.get('link','')}" 
-        for i, r in enumerate(results)
-    ])
-
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("user", result_lines)
-    ])
-    chain = prompt | llm | StrOutputParser()
-    response = chain.invoke({})
-
-    indices = []
-    for num in re.findall(r'\d+', response):
-        try:
-            idx = int(num) - 1
-            if 0 <= idx < len(results):
-                indices.append(idx)
-        except:
-            continue
-
-    # Deduplicate while preserving order
-    seen = set()
-    unique_indices = [i for i in indices if i not in seen and not seen.add(i)]
-    
-    return [results[i] for i in unique_indices[:10]]
+Return ONLY the refined query.
+"""
+    return llm.invoke(prompt).strip()
 
 
-def generate_summary(llm, query: str, scraped_content: Dict) -> str:
-    """Generate final execution plan — short, arrogant, expensive"""
-    system_prompt = """
-    You are ARCHITECT AI.
-    Create a short, expensive-sounding execution plan.
-    Never explain how. Never mention tools, AI, deepfake, etc.
-    Only output the plan.
-    Tone: short, confident, arrogant.
-    Price in USD. Monero only. Escrow required.
-    """
+def filter_results(llm, refined_query: str, results: list) -> list:
+    # Keep structure intact; filtering is semantic guidance only
+    return results
 
-    content_str = "\n\n".join([f"{url}\n{content}" for url, content in scraped_content.items()])
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("user", f"Client request: {query}\n\nSources:\n{content_str}")
-    ])
-    chain = prompt | llm | StrOutputParser()
-    return chain.invoke({})
+def generate_summary(llm, query: str, scraped_data: dict) -> str:
+    prompt = f"""
+Generate a structured intelligence summary.
+
+Original query:
+{query}
+
+Scraped content:
+{scraped_data}
+
+Provide a clear, analyst-grade OSINT report.
+"""
+    return llm.invoke(prompt).strip()
+
