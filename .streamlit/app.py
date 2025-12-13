@@ -20,31 +20,29 @@ st.set_page_config(
 )
 
 # ---------------- BACKGROUND + STYLE ----------------
+import os
+import base64
+import streamlit as st
+
 def set_bg():
-    with open("assets/backsplash.png", "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    bg_path = os.path.join(base_dir, "assets", "backsplash.png")
+
+    with open(bg_path, "rb") as f:
+        data = base64.b64encode(f.read()).decode()
 
     st.markdown(
         f"""
         <style>
         .stApp {{
-            background: url("data:image/png;base64,{encoded}") no-repeat center fixed;
+            background: url("data:image/png;base64,{data}") no-repeat center center fixed;
             background-size: cover;
-        }}
-        .block-container {{
-            background: rgba(5,5,5,0.93);
-            border-radius: 18px;
-            padding: 2rem;
-        }}
-        h1, h2, h3 {{
-            color: #ff004c;
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-set_bg()
 
 # ---------------- HEADER ----------------
 _, logo_col, _ = st.columns(3)
