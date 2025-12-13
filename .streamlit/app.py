@@ -54,7 +54,7 @@ Personality
 
 "Speaks like a consultant, not a criminal"
 
-Dissects human behavior the way others dissect code
+"Dissects human behavior the way others dissect code"
 
 Holds quiet contempt for impulsive operators
 
