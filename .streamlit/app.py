@@ -191,7 +191,7 @@ if mode == "🕵️ OSINT Investigation":
     model = st.sidebar.selectbox("LLM Model", model_options)
     threads = st.sidebar.slider("Scraping Threads", 1, 12, 4)
 
-    with st.form("search_form"):  # 🚫 NO clear_on_submit
+    with st.form("search_form"):
         query = st.text_input(
             "Investigation Query",
             placeholder="e.g. leaked credentials marketplace",
@@ -205,19 +205,22 @@ if mode == "🕵️ OSINT Investigation":
 
     if run and query:
 
-        for k in ["refined", "results", "filtered", "scraped", "summary"]:
+        for k in ["refined", "results", "filtered", "scraped"]:
             st.session_state.pop(k, None)
 
-        with status.spinner("Loading LLM…"):
+        # ---- LOAD LLM ----
+        with st.spinner("Loading LLM…"):
             llm = get_llm(model)
 
-        with status.spinner("Refining query…"):
+        # ---- REFINE QUERY ----
+        with st.spinner("Refining query…"):
             st.session_state.refined = refine_query(llm, query)
         c1.container(border=True).markdown(
             f"**Refined Query**\n\n{st.session_state.refined}"
         )
 
-        with status.spinner("Searching sources…"):
+        # ---- SEARCH ----
+        with st.spinner("Searching sources…"):
             st.session_state.results = get_search_results(
                 st.session_state.refined.replace(" ", "+"),
                 max_workers=threads,
@@ -226,7 +229,8 @@ if mode == "🕵️ OSINT Investigation":
             f"**Results Found**\n\n{len(st.session_state.results)}"
         )
 
-        with status.spinner("Filtering results…"):
+        # ---- FILTER ----
+        with st.spinner("Filtering results…"):
             st.session_state.filtered = filter_results(
                 llm,
                 st.session_state.refined,
@@ -236,13 +240,15 @@ if mode == "🕵️ OSINT Investigation":
             f"**Filtered Results**\n\n{len(st.session_state.filtered)}"
         )
 
-        with status.spinner("Scraping content…"):
+        # ---- SCRAPE ----
+        with st.spinner("Scraping content…"):
             st.session_state.scraped = scrape_multiple(
                 st.session_state.filtered,
                 max_workers=threads,
             )
 
-        with status.spinner("Generating intelligence summary…"):
+        # ---- SUMMARY ----
+        with st.spinner("Generating intelligence summary…"):
             summary = generate_summary(
                 llm,
                 query,
@@ -262,6 +268,7 @@ if mode == "🕵️ OSINT Investigation":
         )
 
         status.success("✔ Investigation complete")
+
 
 # ---------------- FOOTER ----------------
 st.markdown(
