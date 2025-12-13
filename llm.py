@@ -1,100 +1,59 @@
-# llm.py — ARCHITECT AI Edition (2025)
-# Works perfectly with Ollama + Streamlit Cloud (when using local Ollama via tunnel)
+# llm.py — ARCHITECT AI (NO LangChain, Cloud Safe)
 
-import ollama
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-
-# No API keys needed — uses your local Ollama model "architect"
-def get_llm(model_choice="architect"):
-    """
-    Returns a LangChain-compatible LLM that talks to your local Ollama model.
-    We only use one model: 'architect' (your custom 8B/70B model)
-    """
-    class OllamaLLM:
-        def __init__(self, model):
-            self.model = model
-
-        def invoke(self, input):
-            if isinstance(input, list):
-                messages = input
-            else:
-                messages = [{"role": "user", "content": str(input)}]
-
-            response = ollama.chat(model=self.model, messages=messages)
-            return type('obj(content=response['message']['content'])
-
-        def stream(self, input):
-            if isinstance(input, list):
-                messages = input
-            else:
-                messages = [{"role": "user", "content": str(input)}]
-
-            for chunk in ollama.chat(model=self.model, messages=messages, stream=True):
-                yield chunk['message']['content']
-
-    # Fake type for LangChain compatibility
-    class typeobj:
-        def __init__(self, content):
-            self.content = content
-
-    return OllamaLLM(model=model_choice)
+from groq import Groq
+import streamlit as st
 
 
-def refine_query(llm, user_input):
-    """Turn a client request into a perfect search query"""
-    system_prompt = """
-    You are ARCHITECT AI. Convert the client's request into the shortest, most effective search query possible.
-    Output ONLY the refined query. No explanation. No quotes.
-    """
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("user", "{input}")
-    ])
-    chain = prompt | llm | StrOutputParser()
-    return chain.invoke({"input": user_input})
+def get_llm(model_name: str):
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+
+    class LLM:
+        def invoke(self, prompt: str) -> str:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a professional OSINT analyst."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+                max_tokens=800,
+            )
+            return response.choices[0].message.content
+
+    return LLM()
 
 
-def filter_results(llm, query, results):
-    """Pick the top 10 most relevant results"""
-    if not results:
-        return []
+# ---------------- OSINT HELPERS ----------------
 
-    system_prompt = f"""
-    You are ARCHITECT AI. From the list below, select the TOP 10 most relevant results for this request:
-    "{query}"
+def refine_query(llm, query: str) -> str:
+    prompt = f"""
+Refine the following OSINT investigation query.
+Make it precise, focused, and actionable.
 
-    Rules:
-    - Only output the numbers (e.g. 1,3,7,12)
-    - Maximum 10 numbers
-    - Nothing else
-    """
+Query:
+{query}
 
-    result_lines = "\n".join([f"{i+1}. {r.get('title', '')} — {r.get('link', '')}" 
-                             for i, r in enumerate(results)])
-
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("user", result_lines)
-    ])
-    chain = prompt | llm | StrOutputParser()
-    response = chain.invoke({})
-
-    indices = []
-    for num in re.findall(r'\d+', response):
-        try:
-            idx = int(num) - 1
-            if 0 <= idx < len(results):
-                indices.append(idx)
-        except:
-            continue
-    return [results[i] for i in indices[:10]]
+Return ONLY the refined query.
+"""
+    return llm.invoke(prompt).strip()
 
 
-def generate_summary(llm, query, scraped_content):
-    """Generate final execution plan for the client"""
-    system_prompt = """
-    You are ARCHITECT AI.
-    Create a short, expensive-sounding execution plan.
-    Never explain how anything works.
-    Never mention tools, AI, deepfake, forge, swap,
+def filter_results(llm, refined_query: str, results: list) -> list:
+    # No semantic filtering yet – keep results intact
+    return results
+
+
+def generate_summary(llm, query: str, scraped_data: dict) -> str:
+    prompt = f"""
+Generate a structured intelligence report.
+
+Original query:
+{query}
+
+Scraped data:
+{scraped_data}
+
+Produce a clear, analyst-grade OSINT summary.
+"""
+    return llm.invoke(prompt).strip()
+
