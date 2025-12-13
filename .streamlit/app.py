@@ -52,7 +52,7 @@ Personality
 
 "Calm, articulate, and surgically precise"
 
-Speaks like a consultant, not a criminal
+"Speaks like a consultant, not a criminal"
 
 Dissects human behavior the way others dissect code
 
