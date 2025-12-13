@@ -1,17 +1,14 @@
-# llm.py — ARCHITECT AI (Cloud-safe, no chains)
+# llm.py — ARCHITECT AI (NO LangChain, Cloud Safe)
+
+from groq import Groq
+import streamlit as st
+
 
 def get_llm(model_name: str):
-    """
-    Returns a callable LLM wrapper that exposes .invoke(prompt)
-    Compatible with Groq-style chat models.
-    """
-    from groq import Groq
-    import streamlit as st
-
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-    class GroqLLM:
-        def invoke(self, prompt: str):
+    class LLM:
+        def invoke(self, prompt: str) -> str:
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[
@@ -23,7 +20,7 @@ def get_llm(model_name: str):
             )
             return response.choices[0].message.content
 
-    return GroqLLM()
+    return LLM()
 
 
 # ---------------- OSINT HELPERS ----------------
@@ -42,22 +39,23 @@ Return ONLY the refined query.
 
 
 def filter_results(llm, refined_query: str, results: list) -> list:
-    # Keep structure intact; filtering is semantic guidance only
+    # No semantic filtering yet – keep results intact
     return results
 
 
 def generate_summary(llm, query: str, scraped_data: dict) -> str:
     prompt = f"""
-Generate a structured intelligence summary.
+Generate a structured intelligence report.
 
 Original query:
 {query}
 
-Scraped content:
+Scraped data:
 {scraped_data}
 
-Provide a clear, analyst-grade OSINT report.
+Produce a clear, analyst-grade OSINT summary.
 """
     return llm.invoke(prompt).strip()
+
 
 
