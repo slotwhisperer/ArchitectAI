@@ -1,9 +1,9 @@
 # app.py — ARCHITECT AI
 # Streamlit Cloud Stable Version
 
+import os
 import base64
 import streamlit as st
-from datetime import datetime
 
 # OSINT imports
 from scrape import scrape_multiple
@@ -11,7 +11,8 @@ from search import get_search_results
 from llm import get_llm, refine_query, filter_results, generate_summary
 from llm_utils import get_model_choices
 
-# ---------------- PAGE CONFIG ----------------
+
+# ---------------- PAGE CONFIG (MUST BE FIRST STREAMLIT CALL) ----------------
 st.set_page_config(
     page_title="ARCHITECT AI",
     page_icon="assets/icon.ico",
@@ -19,10 +20,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
 # ---------------- BACKGROUND + STYLE ----------------
 def set_bg():
     # project root: /mount/src/architectai
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    project_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..")
+    )
 
     bg_file = os.path.join(project_root, "assets", "backsplash.png")
 
@@ -37,19 +41,17 @@ def set_bg():
         f"""
         <style>
         .stApp {{
-            background: url("data:image/png;base64,{encoded}") no-repeat center center fixed;
+            background: url("data:image/png;base64,{encoded}") 
+                        no-repeat center center fixed;
             background-size: cover;
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
-st.set_page_config(
-    page_title="ARCHITECT AI",
-    page_icon="assets/icon.ico",
-    layout="centered",
-)
 
+
+# Apply background
 set_bg()
 
 
@@ -59,21 +61,28 @@ with logo_col:
     st.image("assets/logo.jpg", width=220)
 
 st.markdown(
-    "<h1 style='text-align:center;'>ARCHITECT AI</h1>"
-    "<h4 style='text-align:center;color:#999;'>Private Intelligence Platform</h4>",
+    """
+    <h1 style="text-align:center;">ARCHITECT AI</h1>
+    <h4 style="text-align:center;color:#999;">
+        Private Intelligence Platform
+    </h4>
+    """,
     unsafe_allow_html=True,
 )
 
 st.divider()
 
+
 # ---------------- SIDEBAR ----------------
 st.sidebar.title("ARCHITECT AI")
+
 mode = st.sidebar.radio(
     "Mode",
     ["🕵️ OSINT Investigation", "💬 Private Chat"],
 )
 
 st.sidebar.divider()
+
 
 
 # ---------------- CHAT MODE ----------------
