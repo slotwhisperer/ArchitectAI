@@ -60,3 +60,4 @@ Provide a clear, analyst-grade OSINT report.
 """
     return llm.invoke(prompt).strip()
 
+
