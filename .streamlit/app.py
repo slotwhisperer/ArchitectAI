@@ -76,7 +76,7 @@ Acceptable responses:
 - Proof screenshots
 
 Begin.
-"""
+""
 
 # ---------- SESSION STATE ----------
 if "messages" not in st.session_state:
