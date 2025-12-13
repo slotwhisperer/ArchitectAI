@@ -1,9 +1,9 @@
-# app.py — ARCHITECT AI
-# Streamlit Cloud Stable Version
+# app.py — ARCHITECT AI (Streamlit Cloud Safe)
 
 import os
 import base64
 import streamlit as st
+from datetime import datetime
 
 # OSINT imports
 from scrape import scrape_multiple
@@ -11,8 +11,7 @@ from search import get_search_results
 from llm import get_llm, refine_query, filter_results, generate_summary
 from llm_utils import get_model_choices
 
-
-# ---------------- PAGE CONFIG (MUST BE FIRST STREAMLIT CALL) ----------------
+# ---------------- PAGE CONFIG (MUST BE FIRST) ----------------
 st.set_page_config(
     page_title="ARCHITECT AI",
     page_icon="assets/icon.ico",
@@ -20,29 +19,26 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ---------------- PATH RESOLUTION ----------------
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
 
-# ---------------- BACKGROUND + STYLE ----------------
+# ---------------- BACKGROUND ----------------
 def set_bg():
-    # project root: /mount/src/architectai
-    project_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..")
-    )
+    bg_path = os.path.join(ASSETS_DIR, "backsplash.png")
 
-    bg_file = os.path.join(project_root, "assets", "backsplash.png")
-
-    if not os.path.exists(bg_file):
-        st.error(f"Background file not found: {bg_file}")
+    if not os.path.exists(bg_path):
+        st.warning("Background image not found. Skipping background.")
         return
 
-    with open(bg_file, "rb") as f:
+    with open(bg_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
 
     st.markdown(
         f"""
         <style>
         .stApp {{
-            background: url("data:image/png;base64,{encoded}") 
-                        no-repeat center center fixed;
+            background: url("data:image/png;base64,{encoded}") no-repeat center center fixed;
             background-size: cover;
         }}
         </style>
@@ -50,21 +46,18 @@ def set_bg():
         unsafe_allow_html=True,
     )
 
-
-# Apply background
 set_bg()
-
 
 # ---------------- HEADER ----------------
 _, logo_col, _ = st.columns(3)
 with logo_col:
-    st.image("assets/logo.jpg", width=220)
+    st.image(os.path.join(ASSETS_DIR, "logo.jpg"), width=220)
 
 st.markdown(
     """
     <h1 style="text-align:center;">ARCHITECT AI</h1>
-    <h4 style="text-align:center;color:#999;">
-        Private Intelligence Platform
+    <h4 style="text-align:center;color:#aaa;">
+        Private Intelligence & Analysis Platform
     </h4>
     """,
     unsafe_allow_html=True,
@@ -72,17 +65,71 @@ st.markdown(
 
 st.divider()
 
-
 # ---------------- SIDEBAR ----------------
 st.sidebar.title("ARCHITECT AI")
-
 mode = st.sidebar.radio(
     "Mode",
     ["🕵️ OSINT Investigation", "💬 Private Chat"],
 )
 
-st.sidebar.divider()
+# ============================================================
+# 🕵️ OSINT MODE
+# ============================================================
+if mode == "🕵️ OSINT Investigation":
 
+    st.subheader("🕵️ OSINT Investigation")
+
+    model_options = get_model_choices()
+    model = st.sidebar.selectbox("LLM Model", model_options)
+    threads = st.sidebar.slider("Scraping Threads", 1, 12, 4)
+
+    with st.form("search_form"):
+        query = st.text_input(
+            "Investigation Query",
+            placeholder="e.g. darknet marketplace intelligence",
+        )
+        run = st.form_submit_button("Run Investigation")
+
+    status = st.empty()
+    c1, c2, c3 = st.columns(3)
+    summary_holder = st.empty()
+
+    if run and query:
+
+        with status.spinner("Loading LLM…"):
+            llm = get_llm(model)
+
+        with status.spinner("Refining query…"):
+            refined = refine_query(llm, query)
+        c1.container(border=True).markdown(f"**Refined Query**\n\n{refined}")
+
+        with status.spinner("Searching sources…"):
+            results = get_search_results(refined.replace(" ", "+"), max_workers=threads)
+        c2.container(border=True).markdown(f"**Results Found**\n\n{len(results)}")
+
+        with status.spinner("Filtering results…"):
+            filtered = filter_results(llm, refined, results)
+        c3.container(border=True).markdown(f"**Filtered Results**\n\n{len(filtered)}")
+
+        with status.spinner("Scraping content…"):
+            scraped = scrape_multiple(filtered, max_workers=threads)
+
+        with status.spinner("Generating intelligence summary…"):
+            summary = generate_summary(llm, query, scraped)
+
+        with summary_holder.container():
+            st.subheader("📄 Intelligence Summary")
+            st.markdown(summary)
+
+        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        b64 = base64.b64encode(summary.encode()).decode()
+        st.markdown(
+            f'<a download="architect_summary_{now}.md" '
+            f'href="data:text/markdown;base64,{b64}">📥 Download Report</a>',
+            unsafe_allow_html=True,
+        )
+
+        status.success("✔ Investigation complete")
 
 
 # ---------------- CHAT MODE ----------------
