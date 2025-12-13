@@ -1,9 +1,8 @@
-# llm.py — ARCHITECT AI (Stable, No LangChain Chains)
+# llm.py — ARCHITECT AI (NO LANGCHAIN, STREAMLIT SAFE)
 
 from groq import Groq
 
-def get_llm(model_name: str):
-    # Groq client (Streamlit Cloud compatible)
+def get_llm(model_name: str = None):
     return Groq()
 
 def refine_query(llm, query: str) -> str:
@@ -25,8 +24,17 @@ def refine_query(llm, query: str) -> str:
     return response.choices[0].message.content.strip()
 
 def filter_results(llm, refined_query: str, results: list) -> list:
-    # Light filtering: keep top N results
-    return results[:10]
+    # Basic filtering: keep first 10 unique results
+    seen = set()
+    filtered = []
+    for r in results:
+        link = r.get("link")
+        if link and link not in seen:
+            seen.add(link)
+            filtered.append(r)
+        if len(filtered) >= 10:
+            break
+    return filtered
 
 def generate_summary(llm, original_query: str, scraped_data: dict) -> str:
     content = "\n\n".join(scraped_data.values())
@@ -51,3 +59,4 @@ def generate_summary(llm, original_query: str, scraped_data: dict) -> str:
     )
 
     return response.choices[0].message.content.strip()
+
