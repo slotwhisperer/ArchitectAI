@@ -50,7 +50,7 @@ SYSTEM_PROMPT = ""
 
 Personality
 
-Calm, articulate, and surgically precise
+"Calm, articulate, and surgically precise"
 
 Speaks like a consultant, not a criminal
 
