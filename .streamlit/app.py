@@ -20,28 +20,37 @@ st.set_page_config(
 )
 
 # ---------------- BACKGROUND + STYLE ----------------
-import os
-import base64
-import streamlit as st
-
 def set_bg():
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    bg_path = os.path.join(base_dir, "assets", "backsplash.png")
+    # project root: /mount/src/architectai
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-    with open(bg_path, "rb") as f:
-        data = base64.b64encode(f.read()).decode()
+    bg_file = os.path.join(project_root, "assets", "backsplash.png")
+
+    if not os.path.exists(bg_file):
+        st.error(f"Background file not found: {bg_file}")
+        return
+
+    with open(bg_file, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
 
     st.markdown(
         f"""
         <style>
         .stApp {{
-            background: url("data:image/png;base64,{data}") no-repeat center center fixed;
+            background: url("data:image/png;base64,{encoded}") no-repeat center center fixed;
             background-size: cover;
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
+st.set_page_config(
+    page_title="ARCHITECT AI",
+    page_icon="assets/icon.ico",
+    layout="centered",
+)
+
+set_bg()
 
 
 # ---------------- HEADER ----------------
