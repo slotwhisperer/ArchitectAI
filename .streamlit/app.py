@@ -179,7 +179,7 @@ for msg in st.session_state.chat:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    if prompt := st.chat_input("Message ARCHITECT AI..."):
+if prompt := st.chat_input("Message ARCHITECT AI..."):
 
         st.session_state.chat.append({"role": "user", "content": prompt})
 
