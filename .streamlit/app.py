@@ -170,7 +170,7 @@ Acceptable responses:
 Begin.
 """
 
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
     if "chat" not in st.session_state:
         st.session_state.chat = []
