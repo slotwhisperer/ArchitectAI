@@ -3,8 +3,9 @@
 
 import os
 import base64
-from datetime import datetime
 import streamlit as st
+from groq import Groq
+
 
 # ---------------- PATHS ----------------
 BASE_DIR = os.path.dirname(__file__)
